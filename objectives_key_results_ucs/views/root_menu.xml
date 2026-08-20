@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="main_okr_menu" name="OKR"
+        web_icon="objectives_key_results_ucs,static/description/icon.png"
+        groups="base.group_user" sequence="23" />
+    <record id="okr_node_action" model="ir.actions.act_window">
+        <field name="name">OKR Node</field>
+        <field name="res_model">okr.node</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_ftr_this_year':1,}</field>
+    </record>
+
+    <menuitem id="okr_node_menu" name="OKR Node"
+        parent="main_okr_menu"
+        action="objectives_key_results_ucs.okr_node_action" sequence="1" />
+</odoo>

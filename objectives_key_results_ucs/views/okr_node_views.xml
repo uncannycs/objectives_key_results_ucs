@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="okr_node_view_form_base" model="ir.ui.view">
+        <field name="name">okr.node.form.base</field>
+        <field name="model">okr.node</field>
+        <field name="arch" type="xml">
+            <form string="OKR Node Form">
+                <header>
+                    <button name="action_set_to_draft" invisible="state != 'cancelled'"
+                        string="Draft" type="object" />
+                    <button name="button_confirm" string="Confirm"
+                        type="object" invisible="state != 'draft'" class="oe_highlight" />
+                    <button name="button_cancel" string="Cancel" type="object"
+                        invisible="state not in ('draft','confirmed')" />
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="draft,confirmed,cancelled" readonly="1" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="year" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="quarter" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="name" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="description"
+                                placeholder="Description about this objective" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="mode" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="type" readonly="state != 'draft'"/>
+                            <field name="parent_id" string="Is Key Result Of" invisible="1"
+                                    domain="[('id', 'not in', recursive_child_ids), ('id', '!=', id)]" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="recursive_child_ids" invisible="1" />
+                            <field name="key_results_count" invisible="1" />
+                            <field name="points"
+                                readonly="key_results_count &gt; 0 or state == 'cancelled'" />
+                            <field name="progress" widget="progressbar" />
+                            <label for="weight" />
+                            <div class="o_row">
+                                <field name="weight" />
+                                <span>%</span>
+                            </div>
+                        </group>
+                        <group>
+                            <field name="company_id"
+                                readonly="mode != 'company' or state in ('confirmed', 'cancelled')"
+                                groups="base.group_multi_company" force_save="1" />
+                            <field name="department_id"
+                                readonly="mode != 'department'" required="mode == 'department'" invisible="mode == 'company'"
+                                force_save="1" />
+                            <field name="employee_id"
+                                invisible="mode != 'employee'" required="mode == 'employee'"
+                                force_save="1" />
+                            <field name="owner" />
+                            <field name="user_id"
+                                readonly="mode != 'company' or state in ('confirmed', 'cancelled')"
+                                invisible="mode == 'company'"
+                                groups="base.group_no_one" />
+                            <!-- TODO: Add a computed field in a higher version
+                                Purpose: to filter out those user_id who can be the CEO of the company -->
+                            <field name="user_id"
+                                invisible="mode != 'company'" readonly="state in ('confirmed', 'cancelled')"/>
+                            <field name="result" widget="radio" />
+                        </group>
+                        <separator string="Key Results" />
+                        <field name="child_ids" readonly="state != 'draft'"
+                            context="{'default_parent_id': id, 'form_view_ref': 'objectives_key_results_ucs.okr_node_view_form_base'}">
+                            <list string="Key Results">
+                                <field name="name" />
+                                <field name="owner" />
+                                <field name="department_id" />
+                                <field name="weight" string="Weight (%)"
+                                    sum="Total Weight" />
+                                <field name="points" />
+                                <field name="progress" widget="progressbar" />
+                                <field name="type" />
+                                <field name="result" />
+                                <field name="state" />
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+                <chatter>
+                    <field name="message_follower_ids" />
+                    <field name="activity_ids" />
+                    <field name="message_ids" />
+                </chatter>
+            </form>
+        </field>
+    </record>
+
+    <record id="okr_node_view_form" model="ir.ui.view">
+        <field name="name">okr.node.form</field>
+        <field name="model">okr.node</field>
+        <field name="inherit_id" ref="okr_node_view_form_base" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='parent_id']" position="attributes">
+                <attribute name="invisible">0</attribute>
+                <attribute name="required">mode in ('department','employee')</attribute>
+            </xpath>
+            <xpath expr="//field[@name='result']" position="after">
+                <field name="okr_success_points_threshold"
+                    invisible="type != 'aspirational'" required="type == 'aspirational'"
+                    groups="objectives_key_results_ucs.group_okr_manager" readonly="state in ('confirmed', 'cancelled')"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="okr_node_view_tree" model="ir.ui.view">
+        <field name="name">okr.node.tree</field>
+        <field name="model">okr.node</field>
+        <field name="arch" type="xml">
+            <list string="OKR Node Tree" sample="1">
+                <field name="name" />
+                <field name="parent_id" string="Objective" />
+                <field name="time_frame" />
+                <field name="owner" />
+                <field name="mode" />
+                <field name="department_id" />
+                <field name="weight" string="Weight (%)" optional="hide" />
+                <field name="points" optional="hide" />
+                <field name="progress" widget="progressbar" />
+                <field name="type" />
+                <field name="key_results_count" string="# Key Results" />
+                <field name="result" string="Pass/Failed" />
+                <field name="activity_ids" widget="list_activity" optional="show"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'confirmed'" decoration-danger="state == 'cancelled'"/>
+                <field name="company_id" optional="hide"
+                    groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="okr_node_view_search" model="ir.ui.view">
+        <field name="name">okr.node.search</field>
+        <field name="model">okr.node</field>
+        <field name="arch" type="xml">
+            <search string="OKR Node Search">
+                <field name="name" />
+                <separator />
+                <field name="owner" />
+                <field name="department_id" />
+                <field name="employee_id" />
+                <field name="company_id" groups="base.group_multi_company" />
+                <separator />
+                <field name="year" />
+                <separator />
+                <filter name="ftr_this_year" string="This year"
+                    domain="[('year','=', context_today().strftime('%Y'))]" />
+                <separator />
+                <filter name="ftr_draft" string="Draft"
+                    domain="[('state','=', 'draft')]" />
+                <filter name="ftr_confirmed" string="Confirmed"
+                    domain="[('state','=', 'confirmed')]" />
+                <filter name="ftr_cancelled" string="Cancelled"
+                    domain="[('state','=', 'cancelled')]" />
+                <separator />
+                <filter name="ftr_root" string="Root Objectives"
+                    domain="[('mode','=', 'company'),('parent_id','=', False)]" />
+                <separator />
+                <filter name="ftr_company" string="Company Objectives"
+                    domain="[('mode','=', 'company')]" />
+                <filter name="ftr_department" string="Department Objectives"
+                    domain="[('mode','=', 'department')]" />
+                <filter name="ftr_employee" string="Employee Objectives"
+                    domain="[('mode','=', 'employee')]" />
+                <separator />
+                <filter name="ftr_dept_kr" string="Company Key Results"
+                    domain="[('mode','=', 'department')]" />
+                <filter name="ftr_employee_kr"
+                    string="Department Key Results"
+                    domain="[('mode','=', 'employee'),('child_ids','=',False)]" />
+                <separator />
+                <filter name="ftr_successful" string="Successful"
+                    domain="[('result','=', 'successful')]" />
+                <filter name="ftr_failed" string="Failed"
+                    domain="[('result','=', 'failed')]" />
+                <separator />
+                <filter name="ftr_quarter_1" string="Quarter 1"
+                    domain="[('quarter','=', '0')]" />
+                <filter name="ftr_quarter_2" string="Quarter 2"
+                    domain="[('quarter','=', '1')]" />
+                <filter name="ftr_quarter_3" string="Quarter 3"
+                    domain="[('quarter','=', '2')]" />
+                <filter name="ftr_quarter_4" string="Quarter 4"
+                    domain="[('quarter','=', '3')]" />
+                <separator />
+                <filter name="ftr_committed" string="Committed"
+                    domain="[('type','=', 'committed')]" />
+                <filter name="ftr_aspirational" string="Aspirational"
+                    domain="[('type','=', 'aspirational')]" />
+                <separator />
+                <filter name="ftr_is_assigned_to_me"
+                    string="Is Assigned to me" domain="[('user_id','=', uid)]" />
+                <separator />
+                <filter string="Year" name="grp_year" domain="[]"
+                    context="{'group_by':'year'}" />
+                <filter string="Quarter" name="grp_quarter" domain="[]"
+                    context="{'group_by':'quarter'}" />
+                <separator />
+                <filter string="Owner" name="grp_owner" domain="[]"
+                    context="{'group_by':'owner'}" />
+                <filter string="Objective" name="grp_objective" domain="[]"
+                    context="{'group_by':'parent_id'}" />
+                <filter string="Mode" name="grp_mode" domain="[]"
+                    context="{'group_by':'mode'}" />
+                <separator />
+                <filter string="Result" name="grp_result" domain="[]"
+                    context="{'group_by':'result'}" />
+                <separator />
+                <filter string="Company" name="grp_company_id" domain="[]"
+                    context="{'group_by':'company_id'}"
+                    groups="base.group_multi_company" />
+                <filter string="Department" name="grp_department_id"
+                    domain="[]" context="{'group_by':'department_id'}" />
+                <filter string="Employee" name="grp_employee" domain="[]"
+                    context="{'group_by':'employee_id'}" />
+            </search>
+        </field>
+    </record>
+
+</odoo>
