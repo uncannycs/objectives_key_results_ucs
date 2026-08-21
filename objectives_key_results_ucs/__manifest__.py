@@ -32,7 +32,7 @@ Key Features:
     'installable': True,
     'application': True,
     'auto_install': False,
-    'price': '0',
+    'price': '50',
     'currency': 'USD',
     'license': 'Other proprietary',
 }
